@@ -1,0 +1,24 @@
+[project]
+name = "luhub-backend"
+version = "0.1.0"
+description = "API para a plataforma LuHub"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+	{
+		name = "Wendrew Oliveira", 
+		email = "about.wendrew@gmail.com"
+	}
+]
+dependencies = [
+    "bcrypt>=4.3.0",
+    "fastapi>=0.115.10",
+    "ipython>=9.0.0",
+    "pandas>=2.2.3",
+    "psycopg2-binary>=2.9.10",
+    "pydantic>=2.10.6",
+    "python-decouple>=3.8",
+    "requests>=2.32.3",
+    "sqlalchemy>=2.0.38",
+    "uvicorn>=0.34.0",
+]
