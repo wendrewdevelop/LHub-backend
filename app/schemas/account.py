@@ -19,7 +19,7 @@ class AccountInput(BaseModel):
 
 class AccountOutput(BaseModel):
     email: str
-    password: str
+    message: str
 
     class config:
         orm_mode = True

@@ -12,6 +12,8 @@ from fastapi import (
 )
 import sqlalchemy as db
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy import update
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -22,7 +24,7 @@ from jose import (
     ExpiredSignatureError
 )
 from decouple import config
-from app.db.session import session, upload_image
+from app.db.session import session as db_session, upload_image
 from app.core import ( 
     verify_password, 
     blacklisted_tokens,
@@ -43,136 +45,149 @@ class AccountModel(Base):
     created_at = db.Column(db.Date, default=func.now())
     updated_at = db.Column(db.Date, default=func.now(), onupdate=func.now())
 
-    @staticmethod
+    @classmethod
     async def add(
+        cls,
         account: AccountInput,
-        file: Optional[UploadFile] = File(None)
+        session: AsyncSession,
+        file: Optional[UploadFile] = None
     ):
         from app.core.security import hash_password
 
         print(f'ACCOUNT OBJ::: {account}')
 
         password = hash_password(account.password)
-        query = AccountModel(
+        new_account = cls(
             email=account.email,
-            password=password.hex()
+            password=password
         )
 
         try:
             # Inserir os dados na tabela `AccountModel`
-            session.add(query)
-            session.commit()
+            session.add(new_account)
+            await session.commit()
 
             # Caso a imagem seja fornecida, chamar o método `upload_image`
             if file:
-                file_content = await file.read()
+                # file_content = await file.read()
                 await upload_image(
-                    item_id=str(query.id),
-                    model_instance=AccountModel,
+                    item_id=str(new_account.id),
+                    model_instance=cls,
                     column="profile_picture",
-                    file_content=file_content
+                    file=file,
+                    session=session
                 )
 
-            return query
+            await session.refresh(new_account)
+            return new_account
 
         except Exception as error:
             print(error)
             traceback.print_exc()
-            session.rollback()
+            # session.rollback()
 
-        finally:
-            session.close()
 
-    def get(account_id):
-        query = session.query(
-            AccountModel.id.label("id"),
-            AccountModel.email.label("store_name")
+    @classmethod
+    async def get(cls, account_id: str, session: AsyncSession):
+        try:
+            result = await session.get(cls, account_id)
+            if not result:
+                raise HTTPException(status_code=404, detail="Account not found")
+            return result
+        except Exception as error:
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=str(error))
+        
+
+    @classmethod
+    async def update(
+        cls,
+        account_id: str,
+        update_data: dict,
+        session: AsyncSession
+    ):
+        try:
+            db_item = await session.get(cls, account_id)
+            if not db_item:
+                raise HTTPException(status_code=404, detail="Account not found")
+
+            for key, value in update_data.items():
+                if hasattr(db_item, key):
+                    setattr(db_item, key, value)
+
+            await session.commit()
+            await session.refresh(db_item)
+            return db_item
+
+        except Exception as error:
+            await session.rollback()
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=str(error))
+        
+    @classmethod
+    async def get_password_email(
+        cls, 
+        email: str, 
+        session: AsyncSession
+    ):
+        # query = cls(
+            # AccountModel.password.label("password"),
+            # AccountModel.email.label("mail")
+        # ).filter(AccountModel.email==email)
+        # query = query.all()
+        query = await session.execute(
+            select(
+                cls,
+                cls.password.label("password"),
+                cls.email.label("email")
+            ).where(
+                cls.email==email
+            )
         )
-        if account_id:
-            query = query.filter(AccountModel.id==account_id)
-        query = query.all()
+        result = query.first()
+        print(f"RESULT::: {result}")
         try:
-            results = AccountModel.dict_columns(query)
-            return results
+            if result:
+                # Retorna um dicionário com os campos
+                return {
+                    "password": result[1],
+                    "email": result[2]
+                }
         except Exception as error:
             print(error)
             traceback.print_exc()
         finally:
-            session.close()
+            db_session.close()
 
-    def update(update_data: dict):
-        """Update data using dict
-
-        Usage:
-            update_data = {
-                "password": hash_password(new_password).decode("utf8"),
-                "store_name": "New Store Name",
-                "store_description": "Updated description"
-            }
-
-            updated_item = update(user_id="some-user-id", update_data=update_data, session=session)
-
-        Args:
-            store_id (str): ID to find on database table
-            update_data (dict): dict with data to update (column:key)
-
-        Raises:
-            HTTPException: If ID gived is not exist on database table, an exception is raised
-
-        Returns:
-            _type_: return item updated
-        """
-
-        db_item = session.query(AccountModel).filter(
-            AccountModel.id == store_id
-        ).first()
-
-        print(f'DB ITEM::: {db_item}')
-
-        if db_item is None:
-            raise HTTPException(status_code=404, detail="Item not found")
-
-        # Update the fields you need
-        for column, value in update_data.items():
-            if hasattr(db_item, column):
-                setattr(db_item, column, value)
-
-        session.commit()
-        session.refresh(db_item)
-        session.close()
-
-        return db_item
-
-    def get_password_email(email: str):
-        query = session.query(
-            AccountModel.password.label("password"),
-            AccountModel.email.label("mail")
-        ).filter(AccountModel.email==email)
-        query = query.all()
+    @classmethod
+    async def get_user_email(cls, email: str, session: AsyncSession):
+        # query = db_session.query(
+        #     AccountModel.id.label("id"),
+        #     AccountModel.email.label("email"),
+        # ).filter(AccountModel.email==email)
+        # query = query.all()
+        query = await session.execute(
+            select(
+                cls,
+                cls.id.label("id"),
+                cls.email.label("email")
+            ).where(
+                cls.email==email
+            )
+        )
+        result = query.first()
         try:
-            results = [passw for passw in query]
-            return results[0]
+            if result:
+                # Retorna um dicionário com os campos
+                return {
+                    "id": result[1],
+                    "email": result[2]
+                }
         except Exception as error:
             print(error)
             traceback.print_exc()
         finally:
-            session.close()
-
-    def get_user_email(email: str):
-        query = session.query(
-            AccountModel.id.label("id"),
-            AccountModel.email.label("email"),
-        ).filter(AccountModel.email==email)
-        query = query.all()
-        try:
-            results = AccountModel.dict_columns(query)
-            print(f'RESULTS::: {results}')
-            return results
-        except Exception as error:
-            print(error)
-            traceback.print_exc()
-        finally:
-            session.close()
+            db_session.close()
 
 
     def dict_columns(query) -> dict:
@@ -181,15 +196,19 @@ class AccountModel(Base):
             "email": data[1]
         } for data in query]
     
-    @staticmethod
-    def authenticate_user(email: str, password: str):
-        # about.wendrew@gmail.com
-        # sunsix123
-        user = AccountModel.get_password_email(email)
-        if not user:
-            return False
-        if not verify_password(password, user[0]):
-            return False
+    @classmethod
+    async def authenticate_user(
+        cls, 
+        email: str, 
+        password: str, 
+        session: AsyncSession
+    ):
+        user = await cls.get_password_email(email, session)
+        print(f'AUTH USER::: {user}')
+        
+        if not user or not verify_password(password, user["password"]):
+            return None
+        
         return user
     
     @staticmethod

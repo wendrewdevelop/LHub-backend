@@ -37,7 +37,7 @@ def get_password_hash(password):
 
 
 def hash_password(password: str) -> bytes:
-    return hashpw(password.encode(), gensalt())
+    return pwd_context.hash(password)
 
 
 def check_password(password: str, hash: str):

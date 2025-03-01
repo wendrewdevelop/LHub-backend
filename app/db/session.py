@@ -1,5 +1,8 @@
 import os
-from sqlalchemy import create_engine
+from typing import AsyncGenerator 
+from contextlib import asynccontextmanager
+from fastapi import Depends
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -73,28 +76,65 @@ class PostgreSql:
 
 
 async def upload_image(
-        item_id: str,
-        model_instance: object,
-        column: str,
-        file: UploadFile = File(...)
-    ):
-        # Buscar o registro específico pelo `item_id`
-        query = session.query(model_instance).filter(model_instance.id == item_id).first()
+    item_id: str,
+    model_instance: object,
+    column: str,
+    session: AsyncSession,
+    file: UploadFile = File(...)
+):
+    query = await session.execute(
+        select(
+            model_instance
+        ).where(
+            model_instance.id == item_id
+        )
+    )
+    item = query.scalars().first()
 
-        if not query:
-            raise HTTPException(status_code=404, detail="Data not found")
+    if not item:
+        raise HTTPException(
+            status_code=404,
+            detail="Data not found"
+        )
 
-        # Ler o conteúdo do arquivo enviado
-        image_data = await file.read()
+    image_data = await file.read()
 
-        # Usar `setattr` para atualizar a coluna dinamicamente
-        setattr(query, column, image_data)
+    setattr(
+        item, 
+        column, 
+        image_data
+    )
 
-        # Commit no banco de dados
-        session.commit()
-        session.refresh(query)
+    await session.commit()
+    await session.refresh(item)
 
-        return JSONResponse(content={"message": "Image uploaded successfully"})
+    return JSONResponse(
+        content={
+            "message": "Image uploaded successfully"
+        }
+    )
+
+async_engine = create_async_engine(
+    config("DATABASE_URL_DEV") if config("ENV") == "DEV" \
+        else config("DATABASE_URL_PROD"),
+    echo=True
+)
+
+AsyncSessionLocal = sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception as e:
+            await session.rollback()
+            raise e
+        finally:
+            await session.close()
 
 
 postgresql = PostgreSql(

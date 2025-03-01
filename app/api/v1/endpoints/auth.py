@@ -8,9 +8,11 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from typing_extensions import Annotated
+from sqlalchemy.ext.asyncio import AsyncSession
 from decouple import config
 from app.schemas import Token, TokenData, AccountInput, AuthAccountToken
 from app.models import AccountModel
+from app.db import get_async_session
 from app.core.security import (
     create_access_token,
     access_token_expires as token_expires,
@@ -30,8 +32,17 @@ router = APIRouter(
 )
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = AccountModel.authenticate_user(form_data.username, form_data.password)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: AsyncSession = Depends(get_async_session)
+):
+    # Autenticação assíncrona com await
+    user = await AccountModel.authenticate_user(
+        email=form_data.username,
+        password=form_data.password,
+        session=session
+    )
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,24 +50,27 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verifica se `token_expires` já é um `timedelta` ou não
-    if isinstance(token_expires, timedelta):
-        access_token_expires = token_expires
-    else:
-        access_token_expires = timedelta(minutes=token_expires)
-
-    # Cria o token com o tempo de expiração calculado
+    # Configurar tempo de expiração do token
+    access_token_expires = timedelta(minutes=30)
+    
+    # Criar payload do token com dados serializáveis
     access_token = create_access_token(
-        data={"sub": user[1]},
+        data={"sub": user["email"]},  # Usar email ou ID como identificador
         expires_delta=access_token_expires
     )
 
-    user_data = AccountModel.get_user_email(form_data.username)
+    # Obter dados do usuário de forma assíncrona
+    user_data = await AccountModel.get_user_email(form_data.username, session)
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": user_data
+        "user": [
+            {
+                "email": user_data["email"],
+                "id": str(user_data["id"])
+            }
+        ]
     }
 
 
