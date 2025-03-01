@@ -2,6 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from fastapi import HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
 from decouple import config
@@ -25,14 +26,10 @@ class PostgreSql:
                 database: Banco de dados do PostgreSql.
         """
 
-        args = {
-            'connect_args': {
-                'options': f'-c timezone=America/Sao_Paulo'
-            }
-        }
-
-        self.connection = f"postgresql://{user}:{password}@{host}/{database}"
-        self.engine = create_engine(self.connection, **args)
+        connection = config("DATABASE_URL_DEV") \
+                        if config("ENV") == "DEV" else config("DATABASE_URL_PROD")
+        self.connection = connection
+        self.engine = create_async_engine(self.connection)
 
     def get_engine(self):
         """
@@ -51,7 +48,11 @@ class PostgreSql:
         """
 
         try:
-            self.Session = scoped_session(sessionmaker(bind=self.engine))
+            self.Session = scoped_session(sessionmaker(
+                bind=self.engine,
+                class_=AsyncSession,
+                expire_on_commit=False
+            ))
             self.session = self.Session()
             return self.session
         except Exception as error:
@@ -97,9 +98,9 @@ async def upload_image(
 
 
 postgresql = PostgreSql(
-    user=config("NAME"),
-    password=config("PASSWORD"),
-    host=config("HOST"),
+    user=config("NAME_DEV") if config("ENV") == "DEV" else config("NAME_PROD"),
+    password=config("PASSWORD_DEV") if config("ENV") == "DEV" else config("PASSWORD_PROD"),
+    host=config("HOST_DEV") if config("ENV") == "DEV" else config("HOST_PROD"),
     port=5432,
     database=config("DATABASE")
 )

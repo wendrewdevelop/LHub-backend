@@ -1,10 +1,11 @@
 import os
 import uvicorn
+import asyncio
 from decouple import config
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi_sqlalchemy import DBSessionMiddleware
-from app.api.v1.endpoints import router as api_routes
+from app.api.v1.routers import router as api_routes
 from app.core.config import app, Base
 from app.db.session import postgresql, session
 
@@ -12,8 +13,6 @@ from app.db.session import postgresql, session
 URL_local = "http://localhost:8000" if config("ENV") == "DEV" \
             else "https://desiroll.com.br"
 origins = ["*"]
-
-Base.metadata.create_all(bind=postgresql.get_engine())
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +23,7 @@ app.add_middleware(
 )
 app.add_middleware(
     DBSessionMiddleware,
-    db_url=config("DB_URL")
+    db_url=config("DATABASE_URL_DEV") if config("ENV") == "DEV" else config("DATABASE_URL_PROD")
 )
 app.add_middleware(
     SessionMiddleware,
@@ -32,6 +31,14 @@ app.add_middleware(
     same_site="Lax"
 )
 app.include_router(api_routes, prefix="/api")
+
+async def create_tables():
+    async with postgresql.get_engine().begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+@app.on_event("startup")
+async def startup():
+    await create_tables()
 
 if __name__ == "__main__":
     uvicorn.run(
