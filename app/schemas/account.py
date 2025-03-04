@@ -6,22 +6,21 @@ from typing import Union
 class AuthAccountToken(BaseModel):
     token: str
 
+    class Config:
+        from_attributes = True
+
 
 class AccountInput(BaseModel):
     email: str
     password: str
 
     class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+        from_attributes = True
 
 
 class AccountOutput(BaseModel):
     email: str
     message: str
 
-    class config:
-        orm_mode = True
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
+    class Config:
+        from_attributes = True

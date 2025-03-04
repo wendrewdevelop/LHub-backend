@@ -1,6 +1,6 @@
 import traceback
 import uuid
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime, timezone
 from fastapi import (
     HTTPException, 
@@ -31,6 +31,7 @@ from app.core import (
     oauth2_scheme,
     Base
 )
+from app.db import get_async_session
 from app.schemas import AccountInput, TokenData
 
 
@@ -38,12 +39,21 @@ class AccountModel(Base):
     __tablename__ = "tb_account"
 
     # Definição das colunas
-    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = db.Column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4
+    )
     email = db.Column(db.String(255), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     profile_picture = db.Column(db.LargeBinary)
     created_at = db.Column(db.Date, default=func.now())
     updated_at = db.Column(db.Date, default=func.now(), onupdate=func.now())
+
+    store = relationship(
+        "StoreModel", 
+        back_populates="account"
+    )
 
     @classmethod
     async def add(
@@ -84,7 +94,6 @@ class AccountModel(Base):
         except Exception as error:
             print(error)
             traceback.print_exc()
-            # session.rollback()
 
 
     @classmethod
@@ -211,8 +220,12 @@ class AccountModel(Base):
         
         return user
     
-    @staticmethod
-    async def get_current_user(token: str):
+    @classmethod
+    async def get_current_user(
+        cls, 
+        token: str = oauth2_scheme, 
+        session: Any = Depends(get_async_session)
+    ):
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -248,15 +261,27 @@ class AccountModel(Base):
             raise credentials_exception
 
         # Verifica se o usuário existe no banco
-        user = AccountModel.get_user_email(email=token_data.username)
+        user = await cls.get_user_email(
+            email=token_data.username,
+            session=session
+        )
+        print(f'USER CREDENTIALS::: {user}')
 
         if user is None:
             raise credentials_exception
 
         return user
     
+    async def get_current_user_dep(
+        token: str = Depends(oauth2_scheme),
+        session: Any = Depends(get_async_session)
+    ) -> Any:
+        return await AccountModel.get_current_user(token, session)
+
+
     @staticmethod
-    async def get_current_active_user(current_user: Annotated["AccountModel", Depends(get_current_user)]):
+    async def get_current_active_user(
+        current_user: Any = Depends(get_current_user_dep)) -> Any:
         if not current_user:
             raise HTTPException(status_code=400, detail="Inactive user")
         return current_user

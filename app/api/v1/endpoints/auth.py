@@ -1,7 +1,7 @@
 import json
 from fastapi import FastAPI, APIRouter
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, Any
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -34,7 +34,7 @@ router = APIRouter(
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    session: AsyncSession = Depends(get_async_session)
+    session: Any = Depends(get_async_session)
 ):
     # Autenticação assíncrona com await
     user = await AccountModel.authenticate_user(

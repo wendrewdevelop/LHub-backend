@@ -7,6 +7,12 @@ class Token(BaseModel):
     token_type: str
     user: list
 
+    class Config:
+        from_attributes = True
+
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
+
+    class Config:
+        from_attributes = True

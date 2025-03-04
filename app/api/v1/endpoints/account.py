@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Any
 from fastapi import APIRouter, status, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_async_session
@@ -22,7 +22,7 @@ router = APIRouter(
 async def post(
     account: str = Form(...), 
     file: Optional[UploadFile] = File(None),
-    session: AsyncSession = Depends(get_async_session)
+    session: Any = Depends(get_async_session)
 ):
     try:
         print(f'ACCOUNT STRING::: {account}')
@@ -44,11 +44,11 @@ async def post(
         raise e
 
 
-@router.put("/", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(AccountModel.get_current_user)])
+@router.put("/")
 async def put(account: AccountInput):
     ...
 
 
-@router.get("/", dependencies=[Depends(AccountModel.get_current_user)])
+@router.get("/")
 async def get(account_id: str = None):
     return AccountModel.get(account_id)
