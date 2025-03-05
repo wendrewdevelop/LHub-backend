@@ -54,6 +54,10 @@ class AccountModel(Base):
         "StoreModel", 
         back_populates="account"
     )
+    product = relationship(
+        "ProductModel", 
+        back_populates="account"
+    )
 
     @classmethod
     async def add(
