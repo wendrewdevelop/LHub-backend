@@ -60,7 +60,11 @@ async def login_for_access_token(
     )
 
     # Obter dados do usuário de forma assíncrona
-    user_data = await AccountModel.get_user_email(form_data.username, session)
+    user_data = await AccountModel.get_user_email(
+        form_data.username, 
+        session
+    )
+    print(f'USER DATA::: {user_data}')
 
     return {
         "access_token": access_token,

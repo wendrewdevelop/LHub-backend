@@ -58,6 +58,10 @@ class AccountModel(Base):
         "ProductModel", 
         back_populates="account"
     )
+    order = relationship(
+        "OrderModel",
+        back_populates="account"
+    )
 
     @classmethod
     async def add(
@@ -189,9 +193,9 @@ class AccountModel(Base):
             )
         )
         result = query.first()
+        print(f'RESULTS::: {result}')
         try:
             if result:
-                # Retorna um dicionário com os campos
                 return {
                     "id": result[1],
                     "email": result[2]
