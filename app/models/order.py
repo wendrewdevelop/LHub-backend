@@ -30,15 +30,20 @@ class OrderModel(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     total_amount = Column(Float, nullable=False)
     shipping_address = Column(JSON, nullable=False)
-    payment_info = Column(JSON, nullable=False)  # {gateway: "stripe", charge_id: "ch_123"}
+    payment_info = Column(JSON, nullable=False)
     status = Column(
         SQLEnum(OrderStatusEnum), 
         default=OrderStatusEnum.PENDING
     )
+    status_history = Column(
+        JSON,
+        default=[],
+        nullable=False
+    )
     created_at = Column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),  # Python-side default
-        server_default=func.now()                    # Database-side default
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now()                  
     )
     account_id = Column(
         UUID(as_uuid=True),
