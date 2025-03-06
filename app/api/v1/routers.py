@@ -4,7 +4,8 @@ from .endpoints import (
     auth_router,
     store_router,
     product_router,
-    order_router
+    order_router,
+    tracking_router
 )
 
 
@@ -14,3 +15,4 @@ router.include_router(auth_router)
 router.include_router(store_router)
 router.include_router(product_router)
 router.include_router(order_router)
+router.include_router(tracking_router)

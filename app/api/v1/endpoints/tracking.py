@@ -33,7 +33,7 @@ async def get_order_status(
 async def update_order_status(
     order_id: str,
     status_data: OrderStatusUpdate,
-        : AccountModel = Depends(AccountModel.get_current_user),  # Implemente esta validação
+    current_user: AccountModel = Depends(AccountModel.get_current_user), 
     db: AsyncSession = Depends(get_async_session)
 ):
     order = await db.get(OrderModel, order_id)
