@@ -8,7 +8,7 @@ from app.models.account import AccountModel
 
 
 router = APIRouter(
-    tags=["Tracking"]
+    tags=["tracking"]
 )
 
 @router.get("/orders/{order_id}/status", response_model=OrderStatusResponse)

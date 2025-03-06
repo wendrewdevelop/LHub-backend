@@ -1,4 +1,4 @@
-from .config import app, Base
+from .config import app, Base, Settings
 from .security import (
     access_token_expires,
     create_access_token,

@@ -6,3 +6,4 @@ from .order import (
     OrderStatusEnum,
     OrderModel
 )
+from .shipping import ShippingRuleModel

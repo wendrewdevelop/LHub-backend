@@ -11,3 +11,9 @@ from .order import (
     OrderItemCreate, 
     OrderResponse
 )
+from .shipping import (
+    LocalDeliveryResponse,
+    LocalDeliveryRequest,
+    ShippingCalculateRequest,
+    ShippingOptionResponse
+)

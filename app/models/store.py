@@ -1,7 +1,13 @@
 import traceback
 import uuid
 from typing import Optional
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import (
+    Column, 
+    Integer, 
+    String, 
+    ForeignKey, 
+    Float
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +26,15 @@ class StoreModel(Base):
     name = Column(String(100), nullable=False)
     description = Column(String(500))
     address = Column(String(200), nullable=False)
+    cep = Column(
+        String(9), 
+        nullable=False,
+        server_default='00000000'
+    )  
+    delivery_fee = Column(
+        Float,
+        default=0.0
+    )
     account_id = Column(
         UUID(as_uuid=True),
         ForeignKey('tb_account.id'),
