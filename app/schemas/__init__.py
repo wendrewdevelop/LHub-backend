@@ -22,3 +22,4 @@ from .cart import (
     CartItemResponse, 
     CartResponse
 )
+from .gateways.stripe import PaymentRequest as StripePaymentRequest

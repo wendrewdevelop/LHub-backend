@@ -7,7 +7,8 @@ from .endpoints import (
     order_router,
     tracking_router,
     shipping_router,
-    cart_router
+    cart_router,
+    gateway_stripe_router
 )
 
 
@@ -20,3 +21,4 @@ router.include_router(order_router)
 router.include_router(tracking_router)
 router.include_router(shipping_router)
 router.include_router(cart_router)
+router.include_router(gateway_stripe_router)
