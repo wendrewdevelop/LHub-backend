@@ -5,7 +5,7 @@ from .account import (
 )
 from .auth import Token, TokenData
 from .store import StoreInput, StoreOutput
-from .product import ProductInput, ProductOutput
+from .product import ProductInput, ProductOutput, ProductBase
 from .order import (
     OrderCreate, 
     OrderItemCreate, 
@@ -16,4 +16,9 @@ from .shipping import (
     LocalDeliveryRequest,
     ShippingCalculateRequest,
     ShippingOptionResponse
+)
+from .cart import (
+    CartItemCreate, 
+    CartItemResponse, 
+    CartResponse
 )
