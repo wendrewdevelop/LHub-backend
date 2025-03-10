@@ -19,6 +19,7 @@
 - <b>Aplicar migração: </b><code>alembic upgrade head</code>
 
 ### How to use UV
+
 - Init project:
 ```bash
     $ uv init example
@@ -44,3 +45,16 @@
     # in our case we use:
     $ uv run uvicorn app.main:app --reload
 ```
+
+### TO DO
+
+- [ ] Implement Webhook for Asynchronous Updates;
+    - [ ] Configurar Webhook no Dashboard do Stripe;
+        1. Acesse Stripe Dashboard > Developers > Webhooks
+        2. Adicione endpoint: https://sua-api.com/gateways/stripe/webhook
+        3. Selecione eventos:
+            - payment_intent.succeeded
+            - payment_intent.payment_failed
+- [ ] Improve Specific Error Handling;
+- [ ] Add Data Validation in Schema;
+- [ ] Complete Tests with Test Cards;

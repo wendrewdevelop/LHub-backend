@@ -1,4 +1,5 @@
 import os
+import stripe
 from fastapi import (
     HTTPException, 
     APIRouter, 
@@ -35,7 +36,8 @@ def create_payment_intent(request: StripePaymentRequest):
         )
         return JSONResponse(
             content={
-                "intent_id": intent.id
+                "intent_id": intent.id,
+                "client_secret": intent.client_secret
             }
         )
     
@@ -69,3 +71,30 @@ def confirm_payment(payment_intent_id: str):
             status_code=400,
             detail=f"Erro no Stripe: {e}"
         )
+    
+
+@router.post("/webhook/payment/intent")
+async def handle_webhook(
+    request: Request,
+    stripe_signature: str = Header(..., alias="Stripe-Signature")  # Nome exato do header
+):
+    payload = await request.body()
+    
+    try:
+        event = stripe.Webhook.construct_event(  # Use o módulo stripe
+            payload,
+            stripe_signature,
+            config("STRIPE_WEBHOOK_DEV")
+        )
+        print(f"Evento recebido: {event.type}")
+        
+        if event.type == "payment_intent.succeeded":
+            payment_intent = event.data.object
+            print(f"💸 Pagamento confirmado: {payment_intent.id}")
+            await handle_successful_payment(payment_intent)
+        
+        return {"status": "success"}
+    
+    except Exception as e:
+        print(f"Erro no webhook: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
