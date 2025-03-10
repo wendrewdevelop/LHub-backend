@@ -48,13 +48,13 @@
 
 ### TO DO
 
-- [ ] Implement Webhook for Asynchronous Updates;
-    - [ ] Configurar Webhook no Dashboard do Stripe;
-        1. Acesse Stripe Dashboard > Developers > Webhooks
-        2. Adicione endpoint: https://sua-api.com/gateways/stripe/webhook
+- [x] Implement Webhook for Asynchronous Updates;
+    - [x] Configurar Webhook no Dashboard do Stripe;
+        <s>1. Acesse Stripe Dashboard > Developers > Webhooks
+        2. Adicione endpoint: http://localhost:8000/api/gateways/stripe/webhook/payment/intent
         3. Selecione eventos:
             - payment_intent.succeeded
-            - payment_intent.payment_failed
+            - payment_intent.payment_failed</s>
 - [ ] Improve Specific Error Handling;
 - [ ] Add Data Validation in Schema;
 - [ ] Complete Tests with Test Cards;
