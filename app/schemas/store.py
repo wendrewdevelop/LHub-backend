@@ -1,12 +1,14 @@
-from pydantic import BaseModel
-from typing import Union
+from pydantic import BaseModel, Field
+from typing import Union, Optional
 from uuid import UUID
 
 
 class StoreBase(BaseModel):
-    name: str
-    description: str | None = None
-    address: str
+    name: str = Field(..., min_length=3)
+    address: str = Field(..., min_length=5)
+    cep: str = Field(..., pattern=r'^\d{5}-\d{3}$')
+    delivery_fee: float = Field(ge=0)
+    description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -25,3 +27,6 @@ class StoreOutput(StoreBase):
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            UUID: lambda v: str(v),
+        }

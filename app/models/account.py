@@ -204,7 +204,7 @@ class AccountModel(Base):
             print(error)
             traceback.print_exc()
         finally:
-            db_session.close()
+            await db_session.close()
 
 
     def dict_columns(query) -> dict:
