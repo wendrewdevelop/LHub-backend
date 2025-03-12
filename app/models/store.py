@@ -45,6 +45,10 @@ class StoreModel(Base):
         "AccountModel", 
         back_populates="store"
     )
+    products = relationship(
+        "ProductModel", 
+        back_populates="store"
+    )
     orders = relationship(
         "OrderModel",
         back_populates="store"

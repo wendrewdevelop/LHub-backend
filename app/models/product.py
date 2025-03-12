@@ -52,10 +52,19 @@ class ProductModel(Base):
         ForeignKey('tb_account.id'),
         nullable=False
     )
+    store_id = Column(
+        UUID(as_uuid=True), 
+        ForeignKey('tb_store.id'), 
+        nullable=False
+    )
 
     account = relationship(
         "AccountModel", 
         back_populates="product"
+    )
+    store = relationship(
+        "StoreModel", 
+        back_populates="products"
     )
     order_items = relationship(
         "OrderItemModel", 
@@ -82,9 +91,9 @@ class ProductModel(Base):
 
     @classmethod
     async def get_store_products(
-        cls,
-        session: AsyncSession,
-        account_id
+        cls, 
+        session: AsyncSession, 
+        store_id: UUID
     ):
         try:
             query = await session.execute(
@@ -97,7 +106,7 @@ class ProductModel(Base):
                     cls.qtd_in_stock,
                     cls.ready_delivery,
                 ).where(
-                    cls.account_id == account_id
+                    cls.store_id == store_id
                 )
             )
             result = query.mappings().all()

@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 from typing import Optional, Any
 from fastapi import (
     APIRouter, 
@@ -17,6 +18,7 @@ from jose import jwt, JWTError
 from decouple import config
 from app.db import get_async_session
 from app.models.account import AccountModel
+from app.models.store import StoreModel
 from app.schemas.account import AccountInput, AccountOutput
 from app.core import oauth2_scheme
 
@@ -74,7 +76,13 @@ async def check_user_has_store(
     session: AsyncSession = Depends(get_async_session)
 ):
     try:
-        payload = jwt.decode(token, config("SECRET_KEY"), algorithms=[config("ALGORITHM")])
+        payload = jwt.decode(
+            token, 
+            config("SECRET_KEY"), 
+            algorithms=[
+                config("ALGORITHM")
+            ]
+        )
         email = payload.get("sub")
         
         # Query com carregamento do relacionamento store
@@ -82,6 +90,29 @@ async def check_user_has_store(
             select(AccountModel)
             .options(selectinload(AccountModel.store))  # ← Correção chave
             .where(AccountModel.email == email)
+        )
+        
+        account = result.scalars().first()
+        
+        return {
+            "has_store": bool(account and account.store),
+            "store_id": account.store[0].id if account and account.store else None
+        }
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    
+
+@router.get("/public/store")
+async def check_public_store(
+    store_id: UUID,
+    session: AsyncSession = Depends(get_async_session)
+):
+    try:
+        # Query com carregamento do relacionamento store
+        result = await session.execute(
+            select(StoreModel)
+            .where(StoreModel.id == store_id)
         )
         
         account = result.scalars().first()

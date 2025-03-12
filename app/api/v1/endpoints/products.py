@@ -56,14 +56,13 @@ async def new_product(
     
 @router.get("/")
 async def get(
-    account_id: UUID,
-    token: str = Depends(oauth2_scheme),
-    session: AsyncSession = Depends(get_async_session)
+    session: AsyncSession = Depends(get_async_session),
+    store_id: UUID = None
 ):
     try:
         products = await ProductModel.get_store_products(
-            account_id=account_id, 
-            session=session
+            session=session,
+            store_id=store_id
         )
         return products
     except Exception as error:
