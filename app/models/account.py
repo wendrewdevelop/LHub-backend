@@ -231,7 +231,7 @@ class AccountModel(Base):
     @classmethod
     async def get_current_user(
         cls, 
-        token: str = oauth2_scheme, 
+        token: str = Depends(oauth2_scheme), 
         session: Any = Depends(get_async_session)
     ):
         credentials_exception = HTTPException(

@@ -11,8 +11,11 @@ from app.db.session import postgresql, session
 
 
 URL_local = "http://localhost:8000" if config("ENV") == "DEV" \
-            else "https://desiroll.com.br"
-origins = ["*"]
+            else "https://luhub.com.br"
+origins = [
+    "http://localhost:5173", 
+    "http://localhost:8000"
+]
 
 app.add_middleware(
     CORSMiddleware,

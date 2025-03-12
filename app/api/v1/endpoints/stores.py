@@ -29,23 +29,13 @@ router = APIRouter(
 @router.post("/", response_model=StoreOutput)
 async def new_store(
     store: str = Form(...),
-    account: AccountModel = Depends(AccountModel.get_current_user),
-    session: Any = Depends(get_async_session),
-    token: str = Depends(oauth2_scheme),
+    account: AccountModel = Depends(AccountModel.get_current_user),  # ← Remove a dependência duplicada do token
+    session: AsyncSession = Depends(get_async_session),
 ) -> StoreOutput:
     try:
-        print(f'STORE RAW DATA::: {store}')
         store_data = json.loads(store)
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "error": "Invalid store data format",
-                "message": f"JSON parsing error: {str(e)}"
-            }
-        )
-
-    try:
+        print(f'Dados da loja recebidos: {store_data}')
+        
         store_obj = StoreInput(**store_data)
         store_item = await StoreModel.add(
             store=store_obj, 

@@ -12,6 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from app.core import Base
 from app.schemas import ProductInput
 
@@ -60,7 +61,6 @@ class ProductModel(Base):
         "OrderItemModel", 
         back_populates="product"
     )
-    
 
     @classmethod
     async def add(
@@ -76,6 +76,32 @@ class ProductModel(Base):
 
             return new_product
 
+        except Exception as error:
+            print(error)
+            traceback.print_exc()
+
+    @classmethod
+    async def get_store_products(
+        cls,
+        session: AsyncSession,
+        account_id
+    ):
+        try:
+            query = await session.execute(
+                select(
+                    cls.id,
+                    cls.name,
+                    cls.description,
+                    cls.price,
+                    cls.in_stock,
+                    cls.qtd_in_stock,
+                    cls.ready_delivery,
+                ).where(
+                    cls.account_id == account_id
+                )
+            )
+            result = query.mappings().all()
+            return result
         except Exception as error:
             print(error)
             traceback.print_exc()
