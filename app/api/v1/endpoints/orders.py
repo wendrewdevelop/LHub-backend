@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Annotated
+from typing_extensions import Annotated
+from uuid import UUID
 from app.services import (
     reserve_inventory, 
     release_inventory, 
@@ -130,3 +131,20 @@ async def create_order(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar pedido: {str(e)}"
         )
+    
+
+@router.get("/")
+async def get(
+    session: AsyncSession = Depends(get_async_session),
+    store_id: UUID = None
+):
+    try:
+        products = await OrderModel.get_store_orders(
+            session=session,
+            store_id=store_id
+        )
+        return products
+    except Exception as error:
+        raise {
+            "message": f'{error}'
+        }

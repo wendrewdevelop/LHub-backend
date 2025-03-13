@@ -124,3 +124,4 @@ async def check_public_store(
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido")
+    
