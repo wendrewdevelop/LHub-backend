@@ -14,7 +14,6 @@ router = APIRouter(
 @router.get("/orders/{order_id}/status", response_model=OrderStatusResponse)
 async def get_order_status(
     order_id: str,
-    current_user: AccountModel = Depends(AccountModel.get_current_user),
     db: AsyncSession = Depends(get_async_session)
 ):
     order = await db.get(OrderModel, order_id)

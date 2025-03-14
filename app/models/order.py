@@ -64,6 +64,9 @@ class OrderModel(Base):
         server_default=func.now(),
         nullable=True      
     )
+    checkout_id = Column(
+        
+    )
 
     items = relationship(
         "OrderItemModel", 
