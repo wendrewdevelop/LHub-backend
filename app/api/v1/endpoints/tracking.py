@@ -19,7 +19,7 @@ async def get_order_status(
 ):
     order = await db.get(OrderModel, order_id)
     
-    if not order or order.account_id != current_user.id:
+    if not order:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
     
     return {
@@ -37,25 +37,32 @@ async def update_order_status(
     db: AsyncSession = Depends(get_async_session)
 ):
     order = await db.get(OrderModel, order_id)
+    print(f'ORDER ID::: {order_id}')
+    print(f'STATUS DATA::: {status_data}')
     
-    if not order or order.store_id != current_user.store_id:
+    if not order:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
     
-    # Atualiza histórico
-    order.status_history.append({
+    if not order.status_history:
+        order.status_history = []
+
+    new_entry = {
         "status": order.status.value,
-        "timestamp": timezone.utc(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "notes": status_data.notes
-    })
-    
-    order.status = OrderStatusEnum[status_data.status.value]
-    order.updated_at = timezone.utc()
+    }
+    order.status_history = [
+        *order.status_history, 
+        new_entry
+    ]
+    order.status = OrderStatusEnum(status_data.status)
+    order.updated_at = datetime.now(timezone.utc)
     
     await db.commit()
     await db.refresh(order)
     
-    return OrderStatusResponse(
-        current_status=order.status.value,
-        last_update=order.updated_at,
-        history=order.status_history
-    )
+    return {
+        "current_status": order.status.value,
+        "last_update": order.updated_at,
+        "status_history": order.status_history
+    }

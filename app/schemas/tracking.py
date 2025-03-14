@@ -15,6 +15,6 @@ class OrderStatusUpdate(BaseModel):
     notes: str | None = None
 
 class OrderStatusResponse(BaseModel):
-    current_status: OrderStatus
+    current_status: str
     last_update: datetime
-    history: list[dict]  # Ex: [{"status": "ENVIADO", "timestamp": "...", "notes": "..."}]
+    status_history: list[dict]  # Ex: [{"status": "ENVIADO", "timestamp": "...", "notes": "..."}]

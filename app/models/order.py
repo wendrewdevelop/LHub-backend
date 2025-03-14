@@ -11,7 +11,11 @@ from sqlalchemy import (
     DateTime,
     func
 )
-from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
+from sqlalchemy.dialects.postgresql import (
+    UUID, 
+    TIMESTAMP,
+    JSONB
+)
 from sqlalchemy.orm import relationship
 from enum import Enum
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,12 +25,12 @@ from app.core import Base
 
 
 class OrderStatusEnum(str, Enum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    SHIPPED = "shipped"
-    DELIVERED = "delivered"
-    CANCELLED = "cancelled"
-
+    RECEBIDO = "RECEBIDO"
+    EM_PREPARO = "EM_PREPARO"
+    ENVIADO = "ENVIADO"
+    ENTREGUE = "ENTREGUE"
+    CANCELADO = "CANCELADO"
+    
 
 class OrderModel(Base):
     __tablename__ = "tb_order"
@@ -37,10 +41,10 @@ class OrderModel(Base):
     payment_info = Column(JSON, nullable=False)
     status = Column(
         SQLEnum(OrderStatusEnum), 
-        default=OrderStatusEnum.PENDING
+        default=OrderStatusEnum.RECEBIDO
     )
     status_history = Column(
-        JSON,
+        JSONB,
         default=[],
         nullable=False
     )
@@ -53,6 +57,12 @@ class OrderModel(Base):
         UUID(as_uuid=True), 
         ForeignKey("tb_store.id"), 
         nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+        nullable=True      
     )
 
     items = relationship(
@@ -84,6 +94,34 @@ class OrderModel(Base):
                     cls.store_id
                 ).where(
                     cls.store_id == store_id
+                )
+            )
+            result = query.mappings().all()
+            return result
+        except Exception as error:
+            print(error)
+            traceback.print_exc()
+
+    @classmethod
+    async def get_new_orders(
+        cls, 
+        session: AsyncSession, 
+        store_id: UUID
+    ):
+        try:
+            query = await session.execute(
+                select(
+                    cls.id,
+                    cls.total_amount,
+                    cls.shipping_address,
+                    cls.payment_info,
+                    cls.status,
+                    cls.status_history,
+                    cls.created_at,
+                    cls.store_id
+                ).where(
+                    cls.store_id == store_id,
+                    cls.status == "RECEBIDO"
                 )
             )
             result = query.mappings().all()

@@ -68,7 +68,7 @@ async def create_order(
             total_amount=payment_result['amount'],
             shipping_address=order_data.shipping_address,
             payment_info=payment_result,
-            status=OrderStatusEnum.PENDING
+            status=OrderStatusEnum.RECEBIDO
         )
         
         session.add(new_order)
@@ -134,11 +134,28 @@ async def get(
     store_id: UUID = None
 ):
     try:
-        products = await OrderModel.get_store_orders(
+        orders = await OrderModel.get_store_orders(
             session=session,
             store_id=store_id
         )
-        return products
+        return orders
+    except Exception as error:
+        raise {
+            "message": f'{error}'
+        }
+    
+
+@router.get("/retrieve/new")
+async def get_new_orders(
+    session: AsyncSession = Depends(get_async_session),
+    store_id: UUID = None
+):
+    try:
+        orders = await OrderModel.get_new_orders(
+            session=session,
+            store_id=store_id
+        )
+        return orders
     except Exception as error:
         raise {
             "message": f'{error}'
