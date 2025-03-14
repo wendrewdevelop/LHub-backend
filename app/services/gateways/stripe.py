@@ -1,10 +1,12 @@
-from stripe import StripeClient
 import os
+import stripe
+from stripe import StripeClient
 from decouple import config
 
 
 STRIPE_API_SECRET_KEY = config("STRIPE_SECRET_KEY_PROD") if config("ENV") == "PROD" else config("STRIPE_SECRET_KEY_DEV")
-client = StripeClient(STRIPE_API_SECRET_KEY)
+stripe.api_key = STRIPE_API_SECRET_KEY
+print("Stripe API Key:", stripe.api_key)
 
 
 async def handle_successful_payment(payment_intent):

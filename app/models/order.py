@@ -49,11 +49,6 @@ class OrderModel(Base):
         default=lambda: datetime.now(timezone.utc),
         server_default=func.now()                  
     )
-    account_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey('tb_account.id'),
-        nullable=False
-    )
     store_id = Column(
         UUID(as_uuid=True), 
         ForeignKey("tb_store.id"), 
@@ -64,10 +59,6 @@ class OrderModel(Base):
         "OrderItemModel", 
         back_populates="order",
         lazy="selectin"
-    )
-    account = relationship(
-        "AccountModel",
-        back_populates="order"
     )
     store = relationship(
         "StoreModel", 
@@ -90,8 +81,7 @@ class OrderModel(Base):
                     cls.status,
                     cls.status_history,
                     cls.created_at,
-                    cls.store_id,
-                    cls.account_id
+                    cls.store_id
                 ).where(
                     cls.store_id == store_id
                 )

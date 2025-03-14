@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter, 
+    Depends, 
+    HTTPException, 
+    status,
+    Query
+)
 from typing_extensions import Annotated
 from uuid import UUID
 from app.services import (
@@ -41,35 +47,24 @@ router = APIRouter(
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 async def create_order(
     order_data: OrderCreate,
-    current_user: AccountModel = Depends(AccountModel.get_current_user),
+    store_id: UUID = Query(...),
     session: AsyncSession = Depends(get_async_session)
 ):
+    print(f'ORDER DATA::: {order_data}')
     try:
-        # 1. Verificar estoque e reservar itens
-        reserved_items = await reserve_inventory(session, order_data.items)
-
-        # 2. Processar pagamento
+        reserved_items = await reserve_inventory(
+            session, 
+            order_data.items
+        )
+        print(f'RESERVED ITEMS::: {reserved_items}')
+        print(f'ORDER DATA ITEMS::: {order_data.items}')
         payment_result = await process_payment(
             amount=sum(item.unit_price * item.quantity for item in order_data.items),
             payment_method=order_data.payment_method
         )
-        print(f'CURRENT USER::: {current_user.get("id")}')
-
-        query = await session.execute(
-            select(
-                StoreModel,
-                StoreModel.id.label("id")
-            ).where(
-                StoreModel.account_id==current_user.get("id")
-            )
-        )
-        store = query.first()
-        print(f'RESULT ORDER:::: {store.id}')
-
-        # 3. Criar ordem no banco de dados
+        print(f'PAYMENT RESULT::: {payment_result}')
         new_order = OrderModel(
-            account_id=current_user.get("id"),
-            store_id=store.id,
+            store_id=store_id,
             total_amount=payment_result['amount'],
             shipping_address=order_data.shipping_address,
             payment_info=payment_result,

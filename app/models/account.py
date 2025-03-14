@@ -58,10 +58,6 @@ class AccountModel(Base):
         "ProductModel", 
         back_populates="account"
     )
-    order = relationship(
-        "OrderModel",
-        back_populates="account"
-    )
 
     @classmethod
     async def add(

@@ -4,7 +4,7 @@ from pydantic import (
     field_validator, 
     ConfigDict
 )
-from typing import List
+from typing import List, Literal
 from uuid import UUID
 
 
@@ -12,19 +12,25 @@ class OrderItemCreate(BaseModel):
     product_id: UUID
     quantity: int
     unit_price: float
-    account_id: UUID
 
     @field_validator('quantity')
     def validate_quantity(cls, v):
         if v < 1:
             raise ValueError("Quantity must be at least 1")
         return v
+    
+
+class PaymentMethod(BaseModel):
+    provider: Literal['stripe']
+    payment_intent_id: str
+    method_type: str
+    last4: str
 
 
 class OrderCreate(BaseModel):
     items: List[OrderItemCreate]
     shipping_address: dict  
-    payment_method: dict    
+    payment_method: PaymentMethod    
 
 
 class OrderItemResponse(BaseModel):
@@ -40,7 +46,6 @@ class OrderResponse(BaseModel):
     status: str
     created_at: datetime
     items: List[OrderItemResponse]
-    account_id: UUID
 
     model_config = ConfigDict(
         from_attributes=True,

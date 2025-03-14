@@ -24,15 +24,12 @@ router = APIRouter(
 
 @router.post("/payment/intent")
 def create_payment_intent(request: StripePaymentRequest):
-    params = {
-        "amount": request.amount,  # Em centavos (ex: R$10 = 1000)
-        "currency": request.currency,
-        "description": request.description,
-        "automatic_payment_methods": {"enabled": True}
-    }
     try:
-        intent = stripe_client.payment_intents.create(
-            params=params
+        intent = stripe_client.PaymentIntent.create(
+            amount=request.amount,
+            currency=request.currency,
+            description=request.description,
+            automatic_payment_methods={"enabled": True}
         )
         return JSONResponse(
             content={
