@@ -30,7 +30,8 @@ class PaymentMethod(BaseModel):
 class OrderCreate(BaseModel):
     items: List[OrderItemCreate]
     shipping_address: dict  
-    payment_method: PaymentMethod    
+    payment_method: PaymentMethod
+    checkout_id: str
 
 
 class OrderItemResponse(BaseModel):

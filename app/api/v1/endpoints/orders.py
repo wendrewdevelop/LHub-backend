@@ -68,7 +68,8 @@ async def create_order(
             total_amount=payment_result['amount'],
             shipping_address=order_data.shipping_address,
             payment_info=payment_result,
-            status=OrderStatusEnum.RECEBIDO
+            status=OrderStatusEnum.RECEBIDO,
+            checkout_id=order_data.checkout_id
         )
         
         session.add(new_order)

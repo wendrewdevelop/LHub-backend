@@ -9,7 +9,8 @@ from sqlalchemy import (
     Integer, 
     Float, 
     DateTime,
-    func
+    func,
+    String
 )
 from sqlalchemy.dialects.postgresql import (
     UUID, 
@@ -65,7 +66,8 @@ class OrderModel(Base):
         nullable=True      
     )
     checkout_id = Column(
-        
+        String(100), 
+        nullable=True
     )
 
     items = relationship(
@@ -94,9 +96,38 @@ class OrderModel(Base):
                     cls.status,
                     cls.status_history,
                     cls.created_at,
+                    cls.updated_at,
                     cls.store_id
                 ).where(
                     cls.store_id == store_id
+                )
+            )
+            result = query.mappings().all()
+            return result
+        except Exception as error:
+            print(error)
+            traceback.print_exc()
+
+    @classmethod
+    async def tracking_order(
+        cls, 
+        session: AsyncSession, 
+        checkout_id: str
+    ):
+        try:
+            query = await session.execute(
+                select(
+                    cls.id,
+                    cls.total_amount,
+                    cls.shipping_address,
+                    cls.payment_info,
+                    cls.status,
+                    cls.status_history,
+                    cls.created_at,
+                    cls.updated_at,
+                    cls.store_id
+                ).where(
+                    cls.checkout_id == checkout_id
                 )
             )
             result = query.mappings().all()

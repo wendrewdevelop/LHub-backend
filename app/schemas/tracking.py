@@ -16,5 +16,8 @@ class OrderStatusUpdate(BaseModel):
 
 class OrderStatusResponse(BaseModel):
     current_status: str
-    last_update: datetime
-    status_history: list[dict]  # Ex: [{"status": "ENVIADO", "timestamp": "...", "notes": "..."}]
+    last_update: str
+    history: list[dict]
+    total_amount: float
+    delivery_estimate: str
+    shipping_address: str # Ex: [{"status": "ENVIADO", "timestamp": "...", "notes": "..."}]
